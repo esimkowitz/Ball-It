@@ -14,9 +14,28 @@
                       VerticalAlignment="Top" Toggled="ConnectionToggle_Toggled" />
             <TextBlock Text="{Binding SpheroName}" FontSize="22"/>
             <StackPanel x:Name="grdControls" Visibility="Collapsed">
-                <Button x:Name="BeginGameButton" HorizontalAlignment="Left" Content="Click to Begin" FontSize="26.667" Visibility="Visible"/>
-                <TextBlock Typography.Capitals="AllSmallCaps" Text="Sensor Reading" Margin="0,5" FontSize="22"/>
-                <TextBlock x:Name="txtSensor" Text="{Binding GyroReading}" FontSize="16"/>
+                <TextBlock Typography.Capitals="AllSmallCaps" Text="Sensor Reading" 
+                           Margin="0,5" FontSize="22"/>
+                <StackPanel x:Name="LayoutHelper" Orientation="Horizontal">
+                    <StackPanel x:Name="PrelayoutStack" Orientation="Vertical">
+                        <TextBlock x:Name="Empty" Text="" FontSize="17"/>
+                        <TextBlock x:Name="X" Text="X" FontSize="16"/>
+                        <TextBlock x:Name="Y" Text="Y" FontSize="16"/>
+                        <TextBlock x:Name="Z" Text="Z" FontSize="16"/>
+                    </StackPanel>
+                    <StackPanel x:Name="GyrometerStack" Orientation="Vertical" Margin="10,0,10,0">
+                        <TextBlock x:Name="GyrometerTitle" Text="Gyrometer:" FontSize="16"/>
+                        <TextBlock x:Name="GyrometerX" Text="0.0" FontSize="16"/>
+                        <TextBlock x:Name="GyrometerY" Text="0.0" FontSize="16"/>
+                        <TextBlock x:Name="GyrometerZ" Text="0.0" FontSize="16"/>
+                    </StackPanel>
+                    <StackPanel x:Name="AccelerometerStack" Orientation="Vertical">
+                        <TextBlock x:Name="AccelerometerTitle" Text="Accelerometer:" FontSize="16"/>
+                        <TextBlock x:Name="AccelerometerX" Text="0.0" FontSize="16"/>
+                        <TextBlock x:Name="AccelerometerY" Text="0.0" FontSize="16"/>
+                        <TextBlock x:Name="AccelerometerZ" Text="0.0" FontSize="16"/>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
     </Grid>

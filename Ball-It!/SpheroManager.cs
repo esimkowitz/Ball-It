@@ -163,16 +163,18 @@ namespace Ball_It
 
                     m_robot.SensorControl.AccelerometerUpdatedEvent -= OnAccelerometerUpdated;
                     m_robot.SensorControl.GyrometerUpdatedEvent -= OnGyrometerUpdated;
+
+                    RobotProvider provider = RobotProvider.GetSharedProvider();
+                    provider.DiscoveredRobotEvent -= OnRobotDiscovered;
+                    provider.NoRobotsEvent -= OnNoRobotsEvent;
+                    provider.ConnectedRobotEvent -= OnRobotConnected;
                 }
                 catch (Exception)
                 {
 
                     throw;
                 }
-                RobotProvider provider = RobotProvider.GetSharedProvider();
-                provider.DiscoveredRobotEvent -= OnRobotDiscovered;
-                provider.NoRobotsEvent -= OnNoRobotsEvent;
-                provider.ConnectedRobotEvent -= OnRobotConnected;
+                
             }
         }
     }
