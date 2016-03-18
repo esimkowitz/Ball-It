@@ -107,6 +107,7 @@ namespace Ball_It
                 }
             }
         }
+
         private void ConnectionToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (ConnectionToggle.IsOn)
