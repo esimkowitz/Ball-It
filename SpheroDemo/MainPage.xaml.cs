@@ -35,6 +35,8 @@ namespace SpheroDemo
             }
         }
 
+        private const int FILTER_COUNTS = 5;
+
         private const string kNoSpheroConnected = "No Sphero Connected";
 
         //! @brief  the default string to show when connecting to a sphero ({0})
@@ -50,38 +52,38 @@ namespace SpheroDemo
             this.InitializeComponent();
         }
 
-        /// <summary> 
-        /// Invoked when this page is about to be displayed in a Frame. 
-        /// </summary> 
-        /// <param name="e">Event data that describes how this page was reached.  The Parameter 
-        /// property is typically used to configure the page.</param> 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            Application app = Application.Current;
-            app.Suspending += OnSuspending;
-        }
+        ///// <summary> 
+        ///// Invoked when this page is about to be displayed in a Frame. 
+        ///// </summary> 
+        ///// <param name="e">Event data that describes how this page was reached.  The Parameter 
+        ///// property is typically used to configure the page.</param> 
+        //protected override void OnNavigatedTo(NavigationEventArgs e)
+        //{
+        //    base.OnNavigatedTo(e);
+        //    Application app = Application.Current;
+        //    app.Suspending += OnSuspending;
+        //}
 
-        //! @brief  handle the application entering the background 
-        private void OnSuspending(object sender, SuspendingEventArgs args)
-        {
-            ShutdownRobotConnection();
-            ConnectionToggle.IsOn = false;
-        }
+        ////! @brief  handle the application entering the background 
+        //private void OnSuspending(object sender, SuspendingEventArgs args)
+        //{
+        //    ShutdownRobotConnection();
+        //    ConnectionToggle.IsOn = false;
+        //}
 
-        /*! 
-          * @brief   handle the user launching this page in the application 
-          *  
-          *  connects to sphero and sets up the ui 
-          */
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            base.OnNavigatedFrom(e);
-            ShutdownRobotConnection();
-            Application app = Application.Current;
-            app.Suspending -= OnSuspending;
-            ConnectionToggle.IsOn = false;
-        }
+        ///*! 
+        //  * @brief   handle the user launching this page in the application 
+        //  *  
+        //  *  connects to sphero and sets up the ui 
+        //  */
+        //protected override void OnNavigatedFrom(NavigationEventArgs e)
+        //{
+        //    base.OnNavigatedFrom(e);
+        //    ShutdownRobotConnection();
+        //    Application app = Application.Current;
+        //    app.Suspending -= OnSuspending;
+        //    ConnectionToggle.IsOn = false;
+        //}
 
         public void SetupRobotConnection()
         {
@@ -146,22 +148,30 @@ namespace SpheroDemo
             //m_robot.CollisionControl.CollisionDetectedEvent += OnCollisionDetected;
         }
 
+        private FilteredSensor AccelerometerFiltered = new FilteredSensor(FILTER_COUNTS);
+
         private void OnAccelerometerUpdated(object sender, AccelerometerReading reading)
         {
             // expects AccelerometerX,Y,Z to be defined as fields
-            AccelerometerX.Text = "" + reading.X;
-            AccelerometerY.Text = "" + reading.Y;
-            AccelerometerZ.Text = "" + reading.Z;
-            //Debug.WriteLine(string.Format("Accelerometer" + Environment.NewLine + "X: " + 
+            AccelerometerFiltered.add(reading.X, reading.Y, reading.Z);
+            float[] filteredAvg = AccelerometerFiltered.getFiltered();
+            AccelerometerX.Text = "" + filteredAvg[0];
+            AccelerometerY.Text = "" + filteredAvg[1];
+            AccelerometerZ.Text = "" + filteredAvg[2];
+            //Debug.WriteLine(string.Format("Accelerometer" + Environment.NewLine + "X: " +
             //    reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
         }
 
+        private FilteredSensor GyrometerFiltered = new FilteredSensor(FILTER_COUNTS);
+
         private void OnGyrometerUpdated(object sender, GyrometerReading reading)
         {
-            // expects GyrometerX,Y,Z to be defined as fields
-            GyrometerX.Text = "" + reading.X;
-            GyrometerY.Text = "" + reading.Y;
-            GyrometerZ.Text = "" + reading.Z;
+            //expects GyrometerX, Y, Z to be defined as fields
+            GyrometerFiltered.add(reading.X, reading.Y, reading.Z);
+            float[] filteredAvg = GyrometerFiltered.getFiltered();
+            GyrometerX.Text = "" + filteredAvg[0];
+            GyrometerY.Text = "" + filteredAvg[1];
+            GyrometerZ.Text = "" + filteredAvg[2];
             //Debug.WriteLine(string.Format("Gyrometer" + Environment.NewLine + "X: " +
             //    reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
         }
@@ -178,6 +188,7 @@ namespace SpheroDemo
                         m_robot.Sleep();
                         m_robot.Disconnect();
                         Debug.WriteLine("Sphero Disconnected");
+                        SpheroConnected = false;
 
                         m_robot.SensorControl.AccelerometerUpdatedEvent -= OnAccelerometerUpdated;
                         m_robot.SensorControl.GyrometerUpdatedEvent -= OnGyrometerUpdated;
@@ -186,12 +197,14 @@ namespace SpheroDemo
                         provider.DiscoveredRobotEvent -= OnRobotDiscovered;
                         provider.NoRobotsEvent -= OnNoRobotsEvent;
                         provider.ConnectedRobotEvent -= OnRobotConnected;
+                        m_robot = null;
                     }
                     catch (Exception)
                     {
                         throw;
                     }
-                } else
+                }
+                else
                 {
                     m_robot = null;
                 }
