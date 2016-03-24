@@ -4,7 +4,7 @@
   <mp:PhoneIdentity PhoneProductId="3db15377-ed39-4e22-9103-323087694e07" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>SpheroDemo</DisplayName>
-    <PublisherDisplayName>esimkowitz</PublisherDisplayName>
+    <PublisherDisplayName>Evan Simkowitz</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
