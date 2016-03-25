@@ -35,8 +35,6 @@ namespace SpheroDemo
             }
         }
 
-        private const int FILTER_COUNTS = 5;
-
         private const string kNoSpheroConnected = "No Sphero Connected";
 
         //! @brief  the default string to show when connecting to a sphero ({0})
@@ -50,6 +48,8 @@ namespace SpheroDemo
         public MainPage()
         {
             this.InitializeComponent();
+            grdControls.Visibility = Visibility.Collapsed;
+            InitializeSensorReading.IsEnabled = false;
         }
 
         ///// <summary> 
@@ -97,13 +97,15 @@ namespace SpheroDemo
         //! @brief  when a robot is discovered, connect! 
         private void OnRobotDiscovered(object sender, Robot robot)
         {
-            Debug.WriteLine(string.Format(kConnectingToSphero, robot.BluetoothName));
-
-            if (m_robot == null)
+            if (!SpheroConnected)
             {
+                Debug.WriteLine(string.Format(kConnectingToSphero, robot.BluetoothName));
                 RobotProvider provider = RobotProvider.GetSharedProvider();
-                provider.ConnectRobot(robot);
-                m_robot = (Sphero)robot;
+        
+                if (m_robot == null)
+                {
+                    provider.ConnectRobot(robot);
+                }
             }
         }
 
@@ -125,28 +127,26 @@ namespace SpheroDemo
         private void OnNoRobotsEvent(object sender, EventArgs e)
         {
             Debug.WriteLine(kNoSpheroConnected);
-            ConnectionToggle.IsOn = false;
-            ConnectionToggle.OffContent = "Failed";
         }
 
         //! @brief  when a robot is connected, get ready to drive!
         private void OnRobotConnected(object sender, Robot robot)
         {
             Debug.WriteLine(string.Format(kSpheroConnected, robot));
+            m_robot = (Sphero)robot;
             ConnectionToggle.IsOn = true;
             ConnectionToggle.OnContent = "Connected";
             SpheroConnected = true;
             m_robot.SetRGBLED(255, 255, 255);
             SpheroName = string.Format(kSpheroConnected, robot.BluetoothName);
+            InitializeSensorReading.IsEnabled = true;
 
             m_robot.SensorControl.Hz = 40;
-            Debug.WriteLine("GyrometerEvent");
-            m_robot.SensorControl.GyrometerUpdatedEvent += OnGyrometerUpdated;
-            Debug.WriteLine("AccelerometerEvent");
-            m_robot.SensorControl.AccelerometerUpdatedEvent += OnAccelerometerUpdated;
             //m_robot.CollisionControl.StartDetectionForWallCollisions();
             //m_robot.CollisionControl.CollisionDetectedEvent += OnCollisionDetected;
         }
+
+        private const int FILTER_COUNTS = 6;
 
         private FilteredSensor AccelerometerFiltered = new FilteredSensor(FILTER_COUNTS);
 
@@ -158,8 +158,8 @@ namespace SpheroDemo
             AccelerometerX.Text = "" + filteredAvg[0];
             AccelerometerY.Text = "" + filteredAvg[1];
             AccelerometerZ.Text = "" + filteredAvg[2];
-            //Debug.WriteLine(string.Format("Accelerometer" + Environment.NewLine + "X: " +
-            //    reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
+            Debug.WriteLine(string.Format("Accelerometer" + Environment.NewLine + "X: " +
+                filteredAvg[0] + ", Y: " + filteredAvg[1] + ", Z: " + filteredAvg[2] + Environment.NewLine));
         }
 
         private FilteredSensor GyrometerFiltered = new FilteredSensor(FILTER_COUNTS);
@@ -172,8 +172,8 @@ namespace SpheroDemo
             GyrometerX.Text = "" + filteredAvg[0];
             GyrometerY.Text = "" + filteredAvg[1];
             GyrometerZ.Text = "" + filteredAvg[2];
-            //Debug.WriteLine(string.Format("Gyrometer" + Environment.NewLine + "X: " +
-            //    reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
+            Debug.WriteLine(string.Format("Gyrometer" + Environment.NewLine + "X: " +
+            reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
         }
 
         public void ShutdownRobotConnection()
@@ -192,6 +192,7 @@ namespace SpheroDemo
 
                         m_robot.SensorControl.AccelerometerUpdatedEvent -= OnAccelerometerUpdated;
                         m_robot.SensorControl.GyrometerUpdatedEvent -= OnGyrometerUpdated;
+                        InitializeSensorReading.IsEnabled = false;
 
                         RobotProvider provider = RobotProvider.GetSharedProvider();
                         provider.DiscoveredRobotEvent -= OnRobotDiscovered;
@@ -229,6 +230,18 @@ namespace SpheroDemo
                 ConnectionToggle.OffContent = "Disconnected";
                 Debug.WriteLine("ConnectionToggle Toggled Off");
                 grdControls.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void InitializeSensorReading_Click(object sender, RoutedEventArgs e)
+        {
+            if (SpheroConnected)
+            {
+                InitializeSensorReading.IsEnabled = false;
+                Debug.WriteLine("GyrometerEvent");
+                m_robot.SensorControl.GyrometerUpdatedEvent += OnGyrometerUpdated;
+                Debug.WriteLine("AccelerometerEvent");
+                m_robot.SensorControl.AccelerometerUpdatedEvent += OnAccelerometerUpdated;
             }
         }
     }
