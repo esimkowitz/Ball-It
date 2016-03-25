@@ -25,6 +25,10 @@ namespace SpheroDemo
             f[i % count, 1] = y;
             f[i % count, 2] = z;
             i++;
+            if (i > 255)
+            {
+                i = 0;
+            }
         }
 
         public float[] getFiltered()
@@ -41,6 +45,17 @@ namespace SpheroDemo
             for (int j = 0; j < 3; j++)
             {
                 avg[j] = avg[j] / count;
+            }
+            return avg;
+        }
+
+        public float[] getFilteredRounded()
+        {
+            float[] avg = getFiltered();
+
+            for (int j = 0; j < 3; j++)
+            {
+                avg[j] = (float)Math.Round((decimal)avg[j], 3, MidpointRounding.AwayFromZero);
             }
             return avg;
         }
