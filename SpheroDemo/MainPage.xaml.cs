@@ -11,6 +11,11 @@ using System.IO;
 using System.Text;
 using Microsoft.ApplicationInsights;
 using System.Collections.Generic;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+using Windows.Storage.AccessCache;
+using Windows.UI.ViewManagement;
+using Windows.Storage.Provider;
 
 // The Blank Page item template is documented at 
 // http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -148,13 +153,14 @@ namespace SpheroDemo
             InitializeSensorReading.IsEnabled = true;
 
             m_robot.SensorControl.Hz = 15;
+            Debug.WriteLine("SensorControl");
             //m_robot.CollisionControl.StartDetectionForWallCollisions();
             //m_robot.CollisionControl.CollisionDetectedEvent += OnCollisionDetected;
         }
 
         private const int FILTER_COUNTS = 10;
 
-        private FilteredSensor AccelerometerFiltered = new FilteredSensor(FILTER_COUNTS, "Accelerometer");
+        private FilteredSensor AccelerometerFiltered;
 
         private void OnAccelerometerUpdated(object sender, AccelerometerReading reading)
         {
@@ -164,16 +170,16 @@ namespace SpheroDemo
             AccelerometerX.Text = "" + filteredAvg[0];
             AccelerometerY.Text = "" + filteredAvg[1];
             AccelerometerZ.Text = "" + filteredAvg[2];
-            var properties = new Dictionary<string, string>
-                {{"name", m_robot.Name}};
-            var results = new Dictionary<string, double>
-                { { "X", filteredAvg[0]}, { "Y", filteredAvg[1]}, {"Z", filteredAvg[2] }};
-            insights.TrackEvent("Accelerometer Update", properties, results);
+            //var properties = new Dictionary<string, string>
+            //    {{"name", m_robot.Name}};
+            //var results = new Dictionary<string, double>
+            //    { { "X", filteredAvg[0]}, { "Y", filteredAvg[1]}, {"Z", filteredAvg[2] }};
+            //insights.TrackEvent("Accelerometer Update", properties, results);
             Debug.WriteLine(string.Format("Accelerometer" + Environment.NewLine + "X: " +
                 filteredAvg[0] + ", Y: " + filteredAvg[1] + ", Z: " + filteredAvg[2] + Environment.NewLine));
         }
 
-        private FilteredSensor GyrometerFiltered = new FilteredSensor(FILTER_COUNTS, "Gyrometer");
+        private FilteredSensor GyrometerFiltered;
 
         private void OnGyrometerUpdated(object sender, GyrometerReading reading)
         {
@@ -183,11 +189,11 @@ namespace SpheroDemo
             GyrometerX.Text = "" + filteredAvg[0];
             GyrometerY.Text = "" + filteredAvg[1];
             GyrometerZ.Text = "" + filteredAvg[2];
-            var properties = new Dictionary<string, string>
-                {{"name", m_robot.Name}};
-            var results = new Dictionary<string, double>
-                { { "X", filteredAvg[0]}, { "Y", filteredAvg[1]}, {"Z", filteredAvg[2] }};
-            insights.TrackEvent("Gyrometer Update", properties, results);
+            //var properties = new Dictionary<string, string>
+            //    {{"name", m_robot.Name}};
+            //var results = new Dictionary<string, double>
+            //    { { "X", filteredAvg[0]}, { "Y", filteredAvg[1]}, {"Z", filteredAvg[2] }};
+            //insights.TrackEvent("Gyrometer Update", properties, results);
             Debug.WriteLine(string.Format("Gyrometer" + Environment.NewLine + "X: " +
             reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
         }
@@ -246,16 +252,77 @@ namespace SpheroDemo
             }
         }
 
-        private void InitializeSensorReading_Click(object sender, RoutedEventArgs e)
+        private async void InitializeSensorReading_Click(object sender, RoutedEventArgs e)
         {
             if (SpheroConnected)
             {
-                InitializeSensorReading.IsEnabled = false;
-                Debug.WriteLine("GyrometerEvent");
-                m_robot.SensorControl.GyrometerUpdatedEvent += OnGyrometerUpdated;
-                Debug.WriteLine("AccelerometerEvent");
-                m_robot.SensorControl.AccelerometerUpdatedEvent += OnAccelerometerUpdated;
+                if (EnsureUnsnapped())
+                {
+                    FileSavePicker savePicker = new FileSavePicker();
+                    savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+                    // Dropdown of file types the user can save the file as
+                    savePicker.FileTypeChoices.Add("Comma-Separated-Values", new List<string>() { ".csv" });
+                    
+                    // Default file name if the user does not type one in or select a file to replace
+                    savePicker.SuggestedFileName = "AccelerometerData";
+                    StorageFile AccelerometerFile = await savePicker.PickSaveFileAsync();
+                    savePicker.SuggestedFileName = "GyrometerData";
+                    StorageFile GyrometerFile = await savePicker.PickSaveFileAsync();
+                    if (AccelerometerFile != null && GyrometerFile != null)
+                    {
+                        // Prevent updates to the remote version of the file until we finish making changes and call CompleteUpdatesAsync.
+                        CachedFileManager.DeferUpdates(AccelerometerFile);
+                        CachedFileManager.DeferUpdates(GyrometerFile);
+                        // write to file
+                        // Application now has read/write access to all contents in the picked folder (including other sub-folder contents)
+                        StorageApplicationPermissions.FutureAccessList.AddOrReplace("PickedFileToken", AccelerometerFile);
+                        StorageApplicationPermissions.FutureAccessList.AddOrReplace("PickedFileToken", GyrometerFile);
+                        Debug.WriteLine("Gyrometer file: " + GyrometerFile.Name);
+                        Debug.WriteLine("Accelerometer file: " + AccelerometerFile.Name);
+
+                        AccelerometerFiltered = new FilteredSensor(FILTER_COUNTS, AccelerometerFile);
+                        GyrometerFiltered = new FilteredSensor(FILTER_COUNTS, GyrometerFile);
+                        
+                        // Let Windows know that we're finished changing the file so the other app can update the remote version of the file.
+                        // Completing updates may require Windows to ask for user input.
+                        FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(GyrometerFile);
+                        FileUpdateStatus status1 = await CachedFileManager.CompleteUpdatesAsync(AccelerometerFile);
+                        if (status == FileUpdateStatus.Complete && status1 == FileUpdateStatus.Complete)
+                        {
+                            Debug.WriteLine("File " + GyrometerFile.Name + " was saved.");
+                            Debug.WriteLine("File " + AccelerometerFile.Name + " was saved.");
+
+                            InitializeSensorReading.IsEnabled = false;
+                            Debug.WriteLine("GyrometerEvent");
+                            m_robot.SensorControl.GyrometerUpdatedEvent += OnGyrometerUpdated;
+                            Debug.WriteLine("AccelerometerEvent");
+                            m_robot.SensorControl.AccelerometerUpdatedEvent += OnAccelerometerUpdated;
+                        }
+                        else
+                        {
+                            Debug.WriteLine("File " + GyrometerFile.Name + " couldn't be saved.");
+                            Debug.WriteLine("File " + AccelerometerFile.Name + " couldn't be saved.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Operation cancelled.");
+                    }
+                }
             }
+        }
+
+        internal bool EnsureUnsnapped()
+        {
+            // FilePicker APIs will not work if the application is in a snapped state.
+            // If an app wants to show a FilePicker while snapped, it must attempt to unsnap first
+            bool unsnapped = ((ApplicationView.Value != ApplicationViewState.Snapped) || ApplicationView.TryUnsnap());
+            if (!unsnapped)
+            {
+                //NotifyUser("Cannot unsnap the sample.", NotifyType.StatusMessage);
+            }
+
+            return unsnapped;
         }
     }
 }
