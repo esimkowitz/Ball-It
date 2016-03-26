@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,12 +12,36 @@ namespace SpheroDemo
         float[,] f;
         private int i;
         private int count;
+        private string filename;
 
-        public FilteredSensor(int count)
+        public FilteredSensor(int count, string name)
         {
             f = new float[count,3];
             i = 0;
+            DateTime timeCreated = DateTime.UtcNow;
+            filename = string.Format(name + "-{0}{1}{2}-{3}{4}.csv",
+                timeCreated.Year, timeCreated.Month, timeCreated.Day, timeCreated.Hour, timeCreated.Minute);
             this.count = count;
+        }
+
+        private void CreatingCsvFiles(float[] f)
+        {
+            string filePath = "E:\\" + filename;
+            var t = Task.Run(() => {
+                File.OpenWrite(filePath);
+            });
+            t.Wait();
+            
+            string delimiter = ",";
+            string[][] output = new string[][]{
+            new string[] {string.Format("{0}", f[0]), string.Format("{0}", f[1]), string.Format("{0}", f[2])} /*add the values that you want 
+                                    inside a csv file. Mostly this function can be used in a foreach loop.*/
+            };
+            int length = output.GetLength(0);
+            StringBuilder sb = new StringBuilder();
+            for (int index = 0; index < length; index++)
+                sb.AppendLine(string.Join(delimiter, output[index]));
+            File.AppendAllText(filePath, sb.ToString());
         }
 
         public void add(float x, float y, float z)
@@ -25,7 +50,7 @@ namespace SpheroDemo
             f[i % count, 1] = y;
             f[i % count, 2] = z;
             i++;
-            if (i > 255)
+            if (i > count)
             {
                 i = 0;
             }
@@ -46,6 +71,7 @@ namespace SpheroDemo
             {
                 avg[j] = avg[j] / count;
             }
+            //CreatingCsvFiles(avg);
             return avg;
         }
 
@@ -57,6 +83,7 @@ namespace SpheroDemo
             {
                 avg[j] = (float)Math.Round((decimal)avg[j], 3, MidpointRounding.AwayFromZero);
             }
+            //CreatingCsvFiles(avg);
             return avg;
         }
     }
