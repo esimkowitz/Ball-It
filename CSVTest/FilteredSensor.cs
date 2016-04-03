@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.Storage.AccessCache;
+using Windows.Storage.Provider;
+using Windows.Storage.Streams;
 
 namespace SpheroDemo
 {
@@ -13,7 +18,7 @@ namespace SpheroDemo
         private StreamWriter writer;
         public string filePath;
 
-        public FilteredSensor(int count, string file)
+        public FilteredSensor(int count, string file )
         {
             f = new float[count, 3];
             i = 0;
@@ -32,6 +37,28 @@ namespace SpheroDemo
             string output = string.Format("{0},{1},{2}\n", f[0], f[1], f[2]); //*add the values that you want 
             writer.WriteLine(output);
             Debug.WriteLine(output);
+            //// Clear previous returned folder name, if it exists, between iterations of this scenario
+            //CachedFileManager.DeferUpdates(file);
+            //StorageApplicationPermissions.FutureAccessList.AddOrReplace("PickedFileToken", file);
+            //using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+            //{
+            //    using (DataWriter writer = new DataWriter(stream))
+            //    {
+            //        string output = string.Format("{0},{1},{2}\n", f[0], f[1], f[2]); //*add the values that you want 
+            //        writer.WriteString(output);
+            //        Debug.WriteLine("Data written");
+            //    }
+            //}
+
+            //FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(file);
+            //if (status == FileUpdateStatus.Complete)
+            //{
+            //    Debug.WriteLine("File " + file.Name + " was saved.");
+            //}
+            //else
+            //{
+            //    Debug.WriteLine("File " + file.Name + " couldn't be saved.");
+            //}
         }
 
         public void add(float x, float y, float z)

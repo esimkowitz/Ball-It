@@ -28,8 +28,11 @@ namespace SpheroDemo
         /// </summary>
         public App()
         {
+            Microsoft.ApplicationInsights.WindowsAppInitializer.InitializeAsync(
+                Microsoft.ApplicationInsights.WindowsCollectors.Metadata |
+                Microsoft.ApplicationInsights.WindowsCollectors.Session);
             this.InitializeComponent();
-            Suspending += OnSuspending;
+            this.Suspending += OnSuspending;
         }
 
         /// <summary>

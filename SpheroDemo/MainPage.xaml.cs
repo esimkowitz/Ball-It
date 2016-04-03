@@ -2,20 +2,11 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using Windows.ApplicationModel;
-using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
-using System.IO;
-using System.Text;
-using Microsoft.ApplicationInsights;
-using System.Collections.Generic;
-using Windows.Storage.Pickers;
-using Windows.Storage;
-using Windows.Storage.AccessCache;
-using Windows.UI.ViewManagement;
-using Windows.Storage.Provider;
+using System.Runtime.CompilerServices;
+using Windows.UI.Xaml.Media;
+using System.Threading;
 
 // The Blank Page item template is documented at 
 // http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -29,20 +20,19 @@ namespace SpheroDemo
     {
         public Sphero m_robot = null;
 
-        private string SpheroName_;
+        private static string SpheroName_;
         public string SpheroName
         {
             get { return SpheroName_; }
             set
             {
                 SpheroName_ = value;
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("SpheroName"));
-                }
+                Debug.WriteLine("SpheroName set to \"" + value + "\"");
+                MessageBar.Text = value;
             }
         }
+
+        private static SolidColorBrush scb = new SolidColorBrush(color: Windows.UI.Colors.CornflowerBlue);
 
         private const string kNoSpheroConnected = "No Sphero Connected";
 
@@ -52,15 +42,16 @@ namespace SpheroDemo
         //! @brief  the default string to show when connected to a sphero ({0})
         private const string kSpheroConnected = "Connected to {0}";
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        TelemetryClient insights = new TelemetryClient();
-
         public MainPage()
         {
             this.InitializeComponent();
             grdControls.Visibility = Visibility.Collapsed;
+            MessageBar.Foreground = scb;
+            Debug.WriteLine("MessageBar.Foreground set");
+            SpheroName = kNoSpheroConnected;
             InitializeSensorReading.IsEnabled = false;
+            SpheroConnected = false;
+            Debug.WriteLine("Made it through MainPage initialization");
         }
 
         ///// <summary> 
@@ -99,10 +90,15 @@ namespace SpheroDemo
         public void SetupRobotConnection()
         {
             RobotProvider provider = RobotProvider.GetSharedProvider();
+            Debug.WriteLine("GetSharedProvider()");
             provider.DiscoveredRobotEvent += OnRobotDiscovered;
+            Debug.WriteLine("DiscoveredRobotEvent");
             provider.NoRobotsEvent += OnNoRobotsEvent;
+            Debug.WriteLine("NoRobotsEvent");
             provider.ConnectedRobotEvent += OnRobotConnected;
+            Debug.WriteLine("ConnectedRobotEvent");
             provider.FindRobots();
+            Debug.WriteLine("FindRobots()");
         }
 
         //! @brief  when a robot is discovered, connect! 
@@ -110,7 +106,7 @@ namespace SpheroDemo
         {
             if (!SpheroConnected)
             {
-                Debug.WriteLine(string.Format(kConnectingToSphero, robot.BluetoothName));
+                SpheroName = string.Format(kConnectingToSphero, robot.BluetoothName);
                 RobotProvider provider = RobotProvider.GetSharedProvider();
 
                 if (m_robot == null)
@@ -120,44 +116,40 @@ namespace SpheroDemo
             }
         }
 
-        private bool SpheroConnected_ = false;
+        private static bool SpheroConnected_ = false;
         public bool SpheroConnected
         {
             get { return SpheroConnected_; }
             set
             {
                 SpheroConnected_ = value;
-
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs("SpheroConnected"));
-                }
             }
         }
 
         private void OnNoRobotsEvent(object sender, EventArgs e)
         {
             Debug.WriteLine(kNoSpheroConnected);
+            SpheroName = kNoSpheroConnected;
         }
 
         //! @brief  when a robot is connected, get ready to drive!
         private void OnRobotConnected(object sender, Robot robot)
         {
-            Debug.WriteLine(string.Format(kSpheroConnected, robot));
+            SpheroName = string.Format(kSpheroConnected, robot.BluetoothName);
+            Debug.WriteLine(SpheroName);
             m_robot = (Sphero)robot;
             ConnectionToggle.IsOn = true;
             ConnectionToggle.OnContent = "Connected";
             SpheroConnected = true;
             m_robot.SetRGBLED(255, 255, 255);
-            SpheroName = string.Format(kSpheroConnected, robot.BluetoothName);
             InitializeSensorReading.IsEnabled = true;
 
             m_robot.SensorControl.Hz = 15;
-            Debug.WriteLine("SensorControl");
+            Debug.WriteLine("SensorControl Hz Set");
             //m_robot.CollisionControl.StartDetectionForWallCollisions();
             //m_robot.CollisionControl.CollisionDetectedEvent += OnCollisionDetected;
         }
-
+        
         private const int FILTER_COUNTS = 10;
 
         private FilteredSensor AccelerometerFiltered;
@@ -194,8 +186,8 @@ namespace SpheroDemo
             //var results = new Dictionary<string, double>
             //    { { "X", filteredAvg[0]}, { "Y", filteredAvg[1]}, {"Z", filteredAvg[2] }};
             //insights.TrackEvent("Gyrometer Update", properties, results);
-            Debug.WriteLine(string.Format("Gyrometer" + Environment.NewLine + "X: " +
-            reading.X + ", Y: " + reading.Y + ", Z: " + reading.Z + Environment.NewLine));
+            Debug.WriteLine(string.Format("Accelerometer" + Environment.NewLine + "X: " +
+                filteredAvg[0] + ", Y: " + filteredAvg[1] + ", Z: " + filteredAvg[2] + Environment.NewLine));
         }
 
         public void ShutdownRobotConnection()
@@ -206,14 +198,26 @@ namespace SpheroDemo
                 {
                     try
                     {
-                        m_robot.SensorControl.StopAll();
-                        m_robot.Sleep();
-                        m_robot.Disconnect();
-                        Debug.WriteLine("Sphero Disconnected");
+                        if (!AccelerometerFiltered.close())
+                        {
+                            SpheroName = "ERROR: Consult debug.";
+                            Debug.WriteLine("Unable to close stream,/n" +
+                        "please close application and manually delete file://" + AccelerometerFiltered.filePath);
+                        }
+                        if (!GyrometerFiltered.close())
+                        {
+                            SpheroName = "ERROR: Consult debug.";
+                            Debug.WriteLine("Unable to close stream,/n" +
+                        "please close application and manually delete file://" + GyrometerFiltered.filePath);
+                        }
 
+                        m_robot.SensorControl.StopAll();
                         m_robot.SensorControl.AccelerometerUpdatedEvent -= OnAccelerometerUpdated;
                         m_robot.SensorControl.GyrometerUpdatedEvent -= OnGyrometerUpdated;
 
+                        m_robot.Sleep();
+                        m_robot.Disconnect();
+                        Debug.WriteLine("Sphero Disconnected");
                     }
                     catch (Exception)
                     {
@@ -224,6 +228,7 @@ namespace SpheroDemo
             }
             SpheroConnected = false;
             InitializeSensorReading.IsEnabled = false;
+            SpheroName = kNoSpheroConnected;
 
             RobotProvider provider = RobotProvider.GetSharedProvider();
             provider.DiscoveredRobotEvent -= OnRobotDiscovered;
@@ -252,77 +257,18 @@ namespace SpheroDemo
             }
         }
 
-        private async void InitializeSensorReading_Click(object sender, RoutedEventArgs e)
+        private void InitializeSensorReading_Click(object sender, RoutedEventArgs e)
         {
             if (SpheroConnected)
             {
-                if (EnsureUnsnapped())
-                {
-                    FileSavePicker savePicker = new FileSavePicker();
-                    savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-                    // Dropdown of file types the user can save the file as
-                    savePicker.FileTypeChoices.Add("Comma-Separated-Values", new List<string>() { ".csv" });
-                    
-                    // Default file name if the user does not type one in or select a file to replace
-                    savePicker.SuggestedFileName = "AccelerometerData";
-                    StorageFile AccelerometerFile = await savePicker.PickSaveFileAsync();
-                    savePicker.SuggestedFileName = "GyrometerData";
-                    StorageFile GyrometerFile = await savePicker.PickSaveFileAsync();
-                    if (AccelerometerFile != null && GyrometerFile != null)
-                    {
-                        // Prevent updates to the remote version of the file until we finish making changes and call CompleteUpdatesAsync.
-                        CachedFileManager.DeferUpdates(AccelerometerFile);
-                        CachedFileManager.DeferUpdates(GyrometerFile);
-                        // write to file
-                        // Application now has read/write access to all contents in the picked folder (including other sub-folder contents)
-                        StorageApplicationPermissions.FutureAccessList.AddOrReplace("PickedFileToken", AccelerometerFile);
-                        StorageApplicationPermissions.FutureAccessList.AddOrReplace("PickedFileToken", GyrometerFile);
-                        Debug.WriteLine("Gyrometer file: " + GyrometerFile.Name);
-                        Debug.WriteLine("Accelerometer file: " + AccelerometerFile.Name);
 
-                        AccelerometerFiltered = new FilteredSensor(FILTER_COUNTS, AccelerometerFile);
-                        GyrometerFiltered = new FilteredSensor(FILTER_COUNTS, GyrometerFile);
-                        
-                        // Let Windows know that we're finished changing the file so the other app can update the remote version of the file.
-                        // Completing updates may require Windows to ask for user input.
-                        FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(GyrometerFile);
-                        FileUpdateStatus status1 = await CachedFileManager.CompleteUpdatesAsync(AccelerometerFile);
-                        if (status == FileUpdateStatus.Complete && status1 == FileUpdateStatus.Complete)
-                        {
-                            Debug.WriteLine("File " + GyrometerFile.Name + " was saved.");
-                            Debug.WriteLine("File " + AccelerometerFile.Name + " was saved.");
-
-                            InitializeSensorReading.IsEnabled = false;
-                            Debug.WriteLine("GyrometerEvent");
-                            m_robot.SensorControl.GyrometerUpdatedEvent += OnGyrometerUpdated;
-                            Debug.WriteLine("AccelerometerEvent");
-                            m_robot.SensorControl.AccelerometerUpdatedEvent += OnAccelerometerUpdated;
-                        }
-                        else
-                        {
-                            Debug.WriteLine("File " + GyrometerFile.Name + " couldn't be saved.");
-                            Debug.WriteLine("File " + AccelerometerFile.Name + " couldn't be saved.");
-                        }
-                    }
-                    else
-                    {
-                        Debug.WriteLine("Operation cancelled.");
-                    }
-                }
+                const string accelFile = "AccelerometerData";
+                const string gyroFile = "GyrometerData";
+                AccelerometerFiltered = new FilteredSensor(FILTER_COUNTS, accelFile);
+                GyrometerFiltered = new FilteredSensor(FILTER_COUNTS, gyroFile);
+                m_robot.SensorControl.AccelerometerUpdatedEvent += OnAccelerometerUpdated;
+                m_robot.SensorControl.GyrometerUpdatedEvent += OnGyrometerUpdated;
             }
-        }
-
-        internal bool EnsureUnsnapped()
-        {
-            // FilePicker APIs will not work if the application is in a snapped state.
-            // If an app wants to show a FilePicker while snapped, it must attempt to unsnap first
-            bool unsnapped = ((ApplicationView.Value != ApplicationViewState.Snapped) || ApplicationView.TryUnsnap());
-            if (!unsnapped)
-            {
-                //NotifyUser("Cannot unsnap the sample.", NotifyType.StatusMessage);
-            }
-
-            return unsnapped;
         }
     }
 }

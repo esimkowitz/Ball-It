@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ball-It", "Ball-It!\Ball-It.csproj", "{76E57AB5-0979-4C4C-AF36-F605BE7A7CF5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpheroDemo", "SpheroDemo\SpheroDemo.csproj", "{EF4BDF73-E286-4628-BF46-31B6817DCF8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSVTest", "CSVTest\CSVTest.csproj", "{57336D83-7685-47D3-A9D2-59AEF3AC8222}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +55,24 @@ Global
 		{EF4BDF73-E286-4628-BF46-31B6817DCF8F}.Release|x86.ActiveCfg = Release|x86
 		{EF4BDF73-E286-4628-BF46-31B6817DCF8F}.Release|x86.Build.0 = Release|x86
 		{EF4BDF73-E286-4628-BF46-31B6817DCF8F}.Release|x86.Deploy.0 = Release|x86
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|ARM.ActiveCfg = Debug|ARM
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|ARM.Build.0 = Debug|ARM
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|ARM.Deploy.0 = Debug|ARM
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|x64.ActiveCfg = Debug|x64
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|x64.Build.0 = Debug|x64
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|x64.Deploy.0 = Debug|x64
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|x86.ActiveCfg = Debug|x86
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|x86.Build.0 = Debug|x86
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Debug|x86.Deploy.0 = Debug|x86
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|ARM.ActiveCfg = Release|ARM
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|ARM.Build.0 = Release|ARM
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|ARM.Deploy.0 = Release|ARM
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|x64.ActiveCfg = Release|x64
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|x64.Build.0 = Release|x64
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|x64.Deploy.0 = Release|x64
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|x86.ActiveCfg = Release|x86
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|x86.Build.0 = Release|x86
+		{57336D83-7685-47D3-A9D2-59AEF3AC8222}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
